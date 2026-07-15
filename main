@@ -1,1 +1,76 @@
 code be here:
+
+
+
+#include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
+#define WIFI_SSID "your"
+#define WIFI_PASS "your"
+#define BOT_TOKEN "your"
+#define TARGET_CHAT_ID "your"
+#define LED_PIN LED_BUILTIN 
+
+#define LED_PIN LED_BUILTIN 
+
+#define BUZZER_PIN D1
+
+WiFiClientSecure client;
+UniversalTelegramBot bot(BOT_TOKEN, client);
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println();
+
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH); 
+
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW); 
+
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi connected");
+
+  client.setInsecure();
+}
+
+void loop() {
+  int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+  
+  while (numNewMessages) {
+    for (int i = 0; i < numNewMessages; i++) {
+      String chat_id = String(bot.messages[i].chat_id);
+      String text = bot.messages[i].text;
+      
+      Serial.println("ID чата: " + chat_id + " | Текст: " + text);
+      
+      if (chat_id == TARGET_CHAT_ID) {
+        Serial.println("Уведомление: Сообщение получено на D1!");
+        
+        digitalWrite(LED_PIN, LOW);   
+        
+        // Звуковой сигнал на пине D1 (активный зуммер)
+        digitalWrite(BUZZER_PIN, HIGH); 
+        delay(500);
+        digitalWrite(BUZZER_PIN, LOW);  
+        delay(100);
+        digitalWrite(BUZZER_PIN, HIGH); 
+        delay(500);
+        digitalWrite(BUZZER_PIN, LOW);  
+     
+        
+        digitalWrite(LED_PIN, HIGH);  
+        
+        if (text == "/ping") {
+          bot.sendMessage(chat_id, "Pong!", "");
+        }
+      }
+    }
+    numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+  }
+  delay(1000);
+}
